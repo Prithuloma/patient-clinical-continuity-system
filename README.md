@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 02676bfdc18594162a4cd34a19b5eefddf8b081f
 # Patient Centric Clinical Data Continuity System
 
 A full-stack system to manage and visualize continuous patient clinical records across encounters.
