@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient History — CDCS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <span class="brand">Clinical Continuity</span>
+  <a href="index.html">Add Patient</a>
+  <a href="add-encounter.html">Add Encounter</a>
+  <a href="patient-history.html" class="active">Patient History</a>
+</nav>
+
+<div class="container">
+  <h1>Patient History</h1>
+  <p class="subtitle">// FULL CLINICAL RECORD</p>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <select id="patient-select">
+      <option value="">Select a patient...</option>
+    </select>
+    <button class="btn btn-primary" onclick="loadHistory()">View History</button>
+  </div>
+
+  <div id="history-container"></div>
+</div>
+
+<script>
+// ── BADGE HELPERS ─────────────────────────────────────────────
+const severityBadge = s => {
+  const map = { Mild:'green', Moderate:'yellow', Severe:'red', Critical:'red', 'Life-threatening':'red' };
+  return `<span class="badge badge-${map[s]||'neutral'}">${s||''}</span>`;
+};
+const statusBadge = s => {
+  const map = { Active:'blue', Resolved:'green', Completed:'green', Normal:'green', Chronic:'yellow', Abnormal:'red', Critical:'red', Pending:'neutral', Discontinued:'neutral', Inactive:'neutral', Suspected:'yellow' };
+  return `<span class="badge badge-${map[s]||'neutral'}">${s||''}</span>`;
+};
+const fmtDate = d => d ? d.slice(0,10) : '—';
+
+// ── LOAD PATIENTS ─────────────────────────────────────────────
+async function loadPatients() {
+  const sel = document.getElementById('patient-select');
+  const placeholder = '<option value="">Select a patient...</option>';
+  try {
+    const res = await fetch('/api/patients');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    const list = Array.isArray(data) ? data : [];
+    sel.innerHTML = placeholder +
+      list.map(p => {
+        const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Patient';
+        return `<option value="${p.patient_id}">${name} — ${fmtDate(p.dob)}</option>`;
+      }).join('');
+  } catch (e) {
+    console.error('loadPatients:', e);
+    sel.innerHTML = placeholder + '<option value="" disabled>Could not load patients</option>';
+  }
+}
+
+// ── LOAD HISTORY ──────────────────────────────────────────────
+async function loadHistory() {
+  const pid = document.getElementById('patient-select').value;
+  const con = document.getElementById('history-container');
+  if (!pid) { con.innerHTML = '<div class="empty">Please select a patient</div>'; return; }
+
+  con.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const res  = await fetch(`/api/history/${pid}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    con.innerHTML = renderHistory(data);
+  } catch(e) {
+    con.innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderHistory({ patient, encounters, diagnoses, medications, allergies, tests }) {
+  const initials = (patient.first_name[0] + patient.last_name[0]).toUpperCase();
+  const age = Math.floor((Date.now() - new Date(patient.dob)) / 31557600000);
+
+  let html = `
+    <div class="patient-header">
+      <div class="avatar">${initials}</div>
+      <div>
+        <h2>${patient.first_name} ${patient.last_name}</h2>
+        <div class="meta">${patient.gender} · ${age} yrs · DOB ${fmtDate(patient.dob)} · ${patient.phone||'No phone'}</div>
+        <div class="meta">${patient.email||''} ${patient.address ? '· '+patient.address : ''}</div>
+      </div>
+      <div class="ml">
+        <div class="blood">${patient.blood_type||'?'}</div>
+        <div class="blood-label">Blood Type</div>
+      </div>
+    </div>`;
+
+  // ── ENCOUNTERS ──────────────────────────────────────────────
+  html += sectionHeader('🏥', 'Clinical Encounters', encounters.length);
+  if (encounters.length) {
+    encounters.forEach(e => {
+      const relDiag = diagnoses.filter(d => d.encounter_id === e.encounter_id);
+      const relMed  = medications.filter(m => m.encounter_id === e.encounter_id);
+      const relTest = tests.filter(t => t.encounter_id === e.encounter_id);
+      html += `
+        <div class="encounter-block">
+          <div class="encounter-head">
+            <strong>${e.facility_name}</strong>
+            <span class="badge badge-blue">${e.encounter_type}</span>
+            <span class="date">Adm: ${fmtDate(e.admission_date)} ${e.discharge_date ? '→ Disch: '+fmtDate(e.discharge_date) : '(ongoing)'}</span>
+            <span class="date" style="margin-left:auto">Dr. ${e.provider_name}</span>
+          </div>
+          <div class="encounter-body">
+            ${e.chief_complaint ? `<p style="font-size:.83rem;margin-bottom:.5rem;color:var(--ink-muted)">Chief Complaint: <strong style="color:var(--ink)">${e.chief_complaint}</strong></p>` : ''}
+            ${relDiag.length ? '<small style="font-weight:700;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)">Diagnoses: </small>' + relDiag.map(d => `<span class="badge badge-yellow" style="margin:.1rem">${d.diagnosis_name}${d.icd_code?' ('+d.icd_code+')':''}</span>`).join('') : ''}
+            ${relMed.length  ? '<br><small style="font-weight:700;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)">Medications: </small>' + relMed.map(m => `<span class="badge badge-blue" style="margin:.1rem">${m.drug_name} ${m.dosage||''}</span>`).join('') : ''}
+            ${relTest.length ? '<br><small style="font-weight:700;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted)">Tests: </small>' + relTest.map(t => `<span class="badge badge-${t.status==='Normal'?'green':t.status==='Abnormal'||t.status==='Critical'?'red':'neutral'}" style="margin:.1rem">${t.test_name}: ${t.result_value||t.status}</span>`).join('') : ''}
+          </div>
+        </div>`;
+    });
+  } else html += '<div class="empty">No encounters on record</div>';
+
+  // ── DIAGNOSES ───────────────────────────────────────────────
+  html += sectionHeader('🩺', 'Diagnoses', diagnoses.length);
+  if (diagnoses.length) {
+    html += `<div class="card" style="padding:0;overflow:hidden"><table class="data-table">
+      <thead><tr><th>ICD</th><th>Diagnosis</th><th>Severity</th><th>Status</th><th>Date</th></tr></thead><tbody>` +
+      diagnoses.map(d => `<tr>
+        <td>${d.icd_code||'—'}</td>
+        <td>${d.diagnosis_name}</td>
+        <td>${severityBadge(d.severity)}</td>
+        <td>${statusBadge(d.status)}</td>
+        <td>${fmtDate(d.diagnosed_date)}</td>
+      </tr>`).join('') + '</tbody></table></div>';
+  } else html += '<div class="empty">No diagnoses on record</div>';
+
+  // ── MEDICATIONS ─────────────────────────────────────────────
+  html += sectionHeader('💊', 'Medications', medications.length);
+  if (medications.length) {
+    html += `<div class="card" style="padding:0;overflow:hidden"><table class="data-table">
+      <thead><tr><th>Drug</th><th>Dosage</th><th>Frequency</th><th>Route</th><th>Status</th><th>Prescribed By</th></tr></thead><tbody>` +
+      medications.map(m => `<tr>
+        <td>${m.drug_name}</td>
+        <td>${m.dosage||'—'}</td>
+        <td>${m.frequency||'—'}</td>
+        <td>${m.route||'—'}</td>
+        <td>${statusBadge(m.status)}</td>
+        <td>${m.prescribed_by||'—'}</td>
+      </tr>`).join('') + '</tbody></table></div>';
+  } else html += '<div class="empty">No medications on record</div>';
+
+  // ── ALLERGIES ───────────────────────────────────────────────
+  html += sectionHeader('⚠️', 'Allergies', allergies.length);
+  if (allergies.length) {
+    html += `<div class="card" style="padding:0;overflow:hidden"><table class="data-table">
+      <thead><tr><th>Allergen</th><th>Reaction</th><th>Severity</th><th>Onset</th><th>Status</th></tr></thead><tbody>` +
+      allergies.map(a => `<tr>
+        <td><strong>${a.allergen}</strong></td>
+        <td>${a.reaction||'—'}</td>
+        <td>${severityBadge(a.severity)}</td>
+        <td>${fmtDate(a.onset_date)}</td>
+        <td>${statusBadge(a.status)}</td>
+      </tr>`).join('') + '</tbody></table></div>';
+  } else html += '<div class="empty">No allergies on record</div>';
+
+  // ── TEST RESULTS ────────────────────────────────────────────
+  html += sectionHeader('🧪', 'Test Results', tests.length);
+  if (tests.length) {
+    html += `<div class="card" style="padding:0;overflow:hidden"><table class="data-table">
+      <thead><tr><th>Test</th><th>Date</th><th>Result</th><th>Unit</th><th>Reference</th><th>Status</th></tr></thead><tbody>` +
+      tests.map(t => `<tr>
+        <td>${t.test_name}</td>
+        <td>${fmtDate(t.test_date)}</td>
+        <td><strong>${t.result_value||'—'}</strong></td>
+        <td>${t.unit||'—'}</td>
+        <td>${t.reference_range||'—'}</td>
+        <td>${statusBadge(t.status)}</td>
+      </tr>`).join('') + '</tbody></table></div>';
+  } else html += '<div class="empty">No test results on record</div>';
+
+  return html;
+}
+
+function sectionHeader(icon, title, count) {
+  return `<div class="section-header">
+    <div class="section-icon">${icon}</div>
+    <span class="section-title">${title}</span>
+    <span class="section-count">${count} record${count!==1?'s':''}</span>
+  </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', loadPatients);
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Patient — CDCS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <span class="brand">Clinical Continuity</span>
+  <a href="index.html" class="active">Add Patient</a>
+  <a href="add-encounter.html">Add Encounter</a>
+  <a href="patient-history.html">Patient History</a>
+</nav>
+
+<div class="container">
+  <h1>Register Patient</h1>
+  <p class="subtitle">// NEW PATIENT RECORD</p>
+
+  <!-- Demographics -->
+  <div class="card">
+    <div class="card-title">Demographics</div>
+    <div class="grid-2">
+      <div class="field"><label>First Name *</label><input id="first_name" placeholder="Arjun"></div>
+      <div class="field"><label>Last Name *</label><input id="last_name" placeholder="Sharma"></div>
+      <div class="field"><label>Date of Birth *</label><input id="dob" type="date"></div>
+      <div class="field"><label>Gender *</label>
+        <select id="gender">
+          <option value="">Select gender</option>
+          <option>Male</option><option>Female</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Blood Type</label>
+        <select id="blood_type">
+          <option value="">Unknown</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="field"><label>Phone</label><input id="phone" placeholder="+91 98410 00000"></div>
+      <div class="field"><label>Email</label><input id="email" type="email" placeholder="patient@email.com"></div>
+      <div class="field"><label>Address</label><input id="address" placeholder="Street, City"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="addPatient()">Register Patient</button>
+  <div id="alert" class="alert"></div>
+</div>
+
+<script>
+async function addPatient() {
+  const body = {
+    first_name: document.getElementById('first_name').value.trim(),
+    last_name:  document.getElementById('last_name').value.trim(),
+    dob:        document.getElementById('dob').value,
+    gender:     document.getElementById('gender').value,
+    blood_type: document.getElementById('blood_type').value || null,
+    phone:      document.getElementById('phone').value.trim() || null,
+    email:      document.getElementById('email').value.trim() || null,
+    address:    document.getElementById('address').value.trim() || null
+  };
+
+  const al = document.getElementById('alert');
+  al.className = 'alert';
+
+  if (!body.first_name || !body.last_name || !body.dob || !body.gender) {
+    al.textContent = 'Please fill all required fields (*)';
+    al.classList.add('show', 'alert-error'); return;
+  }
+
+  try {
+    const res  = await fetch('/api/patients', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    al.textContent = `✓ Patient registered — ID: ${data.patient_id}`;
+    al.classList.add('show', 'alert-success');
+    document.querySelectorAll('input, select').forEach(el => el.value = '');
+  } catch (e) {
+    al.textContent = `✗ ${e.message}`;
+    al.classList.add('show', 'alert-error');
+  }
+}
+</script>
+</body>
+</html>

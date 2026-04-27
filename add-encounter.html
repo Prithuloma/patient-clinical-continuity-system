@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Encounter — CDCS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+  <span class="brand">Clinical Continuity</span>
+  <a href="index.html">Add Patient</a>
+  <a href="add-encounter.html" class="active">Add Encounter</a>
+  <a href="patient-history.html">Patient History</a>
+</nav>
+
+<div class="container">
+  <h1>Clinical Data Entry</h1>
+  <p class="subtitle">// ENCOUNTER & CLINICAL RECORDS</p>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('encounter',this)">Encounter</button>
+    <button class="tab-btn" onclick="showTab('diagnosis',this)">Diagnosis</button>
+    <button class="tab-btn" onclick="showTab('medication',this)">Medication</button>
+    <button class="tab-btn" onclick="showTab('allergy',this)">Allergy</button>
+    <button class="tab-btn" onclick="showTab('test',this)">Test Result</button>
+  </div>
+
+  <!-- ENCOUNTER TAB -->
+  <div id="tab-encounter" class="tab-content">
+    <div class="card">
+      <div class="card-title">New Clinical Encounter</div>
+      <div class="grid-2">
+        <div class="field"><label>Patient *</label><select id="e-patient"></select></div>
+        <div class="field"><label>Encounter Type *</label>
+          <select id="e-type">
+            <option value="">Select type</option>
+            <option>Inpatient</option><option>Outpatient</option>
+            <option>Emergency</option><option>Telehealth</option>
+          </select>
+        </div>
+        <div class="field"><label>Provider Name *</label><input id="e-provider" placeholder="Dr. Meena Subramaniam"></div>
+        <div class="field"><label>Facility Name *</label><input id="e-facility" placeholder="Apollo Hospitals Chennai"></div>
+        <div class="field"><label>Admission Date *</label><input id="e-admit" type="date"></div>
+        <div class="field"><label>Discharge Date</label><input id="e-discharge" type="date"></div>
+        <div class="field"><label>Chief Complaint</label><input id="e-complaint" placeholder="Chest pain, shortness of breath"></div>
+        <div class="field"><label>Notes</label><input id="e-notes" placeholder="Additional clinical notes"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addEncounter()">Save Encounter</button>
+    <div id="e-alert" class="alert"></div>
+  </div>
+
+  <!-- DIAGNOSIS TAB -->
+  <div id="tab-diagnosis" class="tab-content" style="display:none">
+    <div class="card">
+      <div class="card-title">Add Diagnosis</div>
+      <div class="grid-2">
+        <div class="field"><label>Patient *</label><select id="d-patient" onchange="loadEncounters('d-encounter',this.value)"></select></div>
+        <div class="field"><label>Encounter *</label><select id="d-encounter"><option value="">Select encounter</option></select></div>
+        <div class="field"><label>ICD Code</label><input id="d-icd" placeholder="I20.9"></div>
+        <div class="field"><label>Diagnosis Name *</label><input id="d-name" placeholder="Unstable Angina"></div>
+        <div class="field"><label>Severity</label>
+          <select id="d-severity"><option>Mild</option><option selected>Moderate</option><option>Severe</option><option>Critical</option></select>
+        </div>
+        <div class="field"><label>Status</label>
+          <select id="d-status"><option selected>Active</option><option>Resolved</option><option>Chronic</option><option>Suspected</option></select>
+        </div>
+        <div class="field"><label>Diagnosed Date</label><input id="d-date" type="date"></div>
+        <div class="field"><label>Notes</label><input id="d-notes" placeholder="Clinical notes"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addDiagnosis()">Save Diagnosis</button>
+    <div id="d-alert" class="alert"></div>
+  </div>
+
+  <!-- MEDICATION TAB -->
+  <div id="tab-medication" class="tab-content" style="display:none">
+    <div class="card">
+      <div class="card-title">Add Medication Record</div>
+      <div class="grid-2">
+        <div class="field"><label>Patient *</label><select id="m-patient" onchange="loadEncounters('m-encounter',this.value)"></select></div>
+        <div class="field"><label>Encounter *</label><select id="m-encounter"><option value="">Select encounter</option></select></div>
+        <div class="field"><label>Drug Name *</label><input id="m-drug" placeholder="Aspirin"></div>
+        <div class="field"><label>Dosage</label><input id="m-dosage" placeholder="75 mg"></div>
+        <div class="field"><label>Frequency</label><input id="m-freq" placeholder="Once daily"></div>
+        <div class="field"><label>Route</label>
+          <select id="m-route">
+            <option value="">Select route</option>
+            <option>Oral</option><option>IV</option><option>IM</option><option>Topical</option><option>Inhaled</option><option>Sublingual</option>
+          </select>
+        </div>
+        <div class="field"><label>Start Date</label><input id="m-start" type="date"></div>
+        <div class="field"><label>End Date</label><input id="m-end" type="date"></div>
+        <div class="field"><label>Prescribed By</label><input id="m-by" placeholder="Dr. Name"></div>
+        <div class="field"><label>Status</label>
+          <select id="m-status"><option selected>Active</option><option>Discontinued</option><option>Completed</option></select>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addMedication()">Save Medication</button>
+    <div id="m-alert" class="alert"></div>
+  </div>
+
+  <!-- ALLERGY TAB -->
+  <div id="tab-allergy" class="tab-content" style="display:none">
+    <div class="card">
+      <div class="card-title">Add Allergy</div>
+      <div class="grid-2">
+        <div class="field"><label>Patient *</label><select id="al-patient"></select></div>
+        <div class="field"><label>Allergen *</label><input id="al-allergen" placeholder="Penicillin"></div>
+        <div class="field"><label>Reaction</label><input id="al-reaction" placeholder="Hives and rash"></div>
+        <div class="field"><label>Severity</label>
+          <select id="al-severity"><option>Mild</option><option selected>Moderate</option><option>Severe</option><option>Life-threatening</option></select>
+        </div>
+        <div class="field"><label>Onset Date</label><input id="al-date" type="date"></div>
+        <div class="field"><label>Status</label>
+          <select id="al-status"><option selected>Active</option><option>Inactive</option><option>Resolved</option></select>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addAllergy()">Save Allergy</button>
+    <div id="al-alert" class="alert"></div>
+  </div>
+
+  <!-- TEST RESULT TAB -->
+  <div id="tab-test" class="tab-content" style="display:none">
+    <div class="card">
+      <div class="card-title">Add Test Result</div>
+      <div class="grid-2">
+        <div class="field"><label>Patient *</label><select id="t-patient" onchange="loadEncounters('t-encounter',this.value)"></select></div>
+        <div class="field"><label>Encounter *</label><select id="t-encounter"><option value="">Select encounter</option></select></div>
+        <div class="field"><label>Test Name *</label><input id="t-name" placeholder="Troponin I"></div>
+        <div class="field"><label>Test Date</label><input id="t-date" type="date"></div>
+        <div class="field"><label>Result Value</label><input id="t-value" placeholder="0.08"></div>
+        <div class="field"><label>Unit</label><input id="t-unit" placeholder="ng/mL"></div>
+        <div class="field"><label>Reference Range</label><input id="t-ref" placeholder="< 0.04"></div>
+        <div class="field"><label>Status</label>
+          <select id="t-status"><option selected>Pending</option><option>Normal</option><option>Abnormal</option><option>Critical</option></select>
+        </div>
+        <div class="field"><label>Ordered By</label><input id="t-by" placeholder="Dr. Name"></div>
+        <div class="field"><label>Notes</label><input id="t-notes" placeholder="Clinical notes"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addTest()">Save Test Result</button>
+    <div id="t-alert" class="alert"></div>
+  </div>
+</div>
+
+<script>
+// ── TAB SWITCHING ────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).style.display = 'block';
+  btn.classList.add('active');
+}
+
+// ── LOAD PATIENTS ────────────────────────────────────────────
+async function loadPatients() {
+  const ids = ['e-patient', 'd-patient', 'm-patient', 'al-patient', 't-patient'];
+  const placeholder = '<option value="">Select patient</option>';
+  let list = [];
+  let failed = false;
+  try {
+    const res = await fetch('/api/patients');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    list = Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error('loadPatients:', e);
+    failed = true;
+  }
+  const options = list
+    .map(p => {
+      const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Patient';
+      return `<option value="${p.patient_id}">${name}</option>`;
+    })
+    .join('');
+  ids.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = placeholder + options + (failed ? '<option value="" disabled>Could not load patients</option>' : '');
+  });
+}
+
+// ── LOAD ENCOUNTERS FOR PATIENT ──────────────────────────────
+async function loadEncounters(targetId, pid) {
+  const sel = document.getElementById(targetId);
+  if (!pid) { sel.innerHTML = '<option value="">Select encounter</option>'; return; }
+  const res  = await fetch(`/api/encounters/patient/${pid}`);
+  const list = await res.json();
+  sel.innerHTML = '<option value="">Select encounter</option>' +
+    list.map(e => `<option value="${e.encounter_id}">${e.encounter_type} — ${e.admission_date?.slice(0,10)} @ ${e.facility_name}</option>`).join('');
+}
+
+// ── ALERT HELPER ─────────────────────────────────────────────
+function showAlert(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `alert show alert-${ok ? 'success' : 'error'}`;
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── ADD ENCOUNTER ────────────────────────────────────────────
+async function addEncounter() {
+  const body = {
+    patient_id:     document.getElementById('e-patient').value,
+    encounter_type: document.getElementById('e-type').value,
+    provider_name:  document.getElementById('e-provider').value.trim(),
+    facility_name:  document.getElementById('e-facility').value.trim(),
+    admission_date: document.getElementById('e-admit').value,
+    discharge_date: document.getElementById('e-discharge').value || null,
+    chief_complaint:document.getElementById('e-complaint').value.trim() || null,
+    notes:          document.getElementById('e-notes').value.trim() || null
+  };
+  try {
+    const res  = await fetch('/api/encounters', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showAlert('e-alert', `✓ Encounter saved — ID: ${data.encounter_id}`, true);
+  } catch(e) { showAlert('e-alert', `✗ ${e.message}`, false); }
+}
+
+// ── ADD DIAGNOSIS ─────────────────────────────────────────────
+async function addDiagnosis() {
+  const body = {
+    encounter_id:   document.getElementById('d-encounter').value,
+    patient_id:     document.getElementById('d-patient').value,
+    icd_code:       document.getElementById('d-icd').value.trim() || null,
+    diagnosis_name: document.getElementById('d-name').value.trim(),
+    severity:       document.getElementById('d-severity').value,
+    status:         document.getElementById('d-status').value,
+    diagnosed_date: document.getElementById('d-date').value || null,
+    notes:          document.getElementById('d-notes').value.trim() || null
+  };
+  try {
+    const res  = await fetch('/api/clinical/diagnosis', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showAlert('d-alert', `✓ Diagnosis saved — ID: ${data.diagnosis_id}`, true);
+  } catch(e) { showAlert('d-alert', `✗ ${e.message}`, false); }
+}
+
+// ── ADD MEDICATION ────────────────────────────────────────────
+async function addMedication() {
+  const body = {
+    encounter_id: document.getElementById('m-encounter').value,
+    patient_id:   document.getElementById('m-patient').value,
+    drug_name:    document.getElementById('m-drug').value.trim(),
+    dosage:       document.getElementById('m-dosage').value.trim() || null,
+    frequency:    document.getElementById('m-freq').value.trim() || null,
+    route:        document.getElementById('m-route').value || null,
+    start_date:   document.getElementById('m-start').value || null,
+    end_date:     document.getElementById('m-end').value || null,
+    prescribed_by:document.getElementById('m-by').value.trim() || null,
+    status:       document.getElementById('m-status').value
+  };
+  try {
+    const res  = await fetch('/api/clinical/medication', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showAlert('m-alert', `✓ Medication saved — ID: ${data.medication_id}`, true);
+  } catch(e) { showAlert('m-alert', `✗ ${e.message}`, false); }
+}
+
+// ── ADD ALLERGY ───────────────────────────────────────────────
+async function addAllergy() {
+  const body = {
+    patient_id: document.getElementById('al-patient').value,
+    allergen:   document.getElementById('al-allergen').value.trim(),
+    reaction:   document.getElementById('al-reaction').value.trim() || null,
+    severity:   document.getElementById('al-severity').value,
+    onset_date: document.getElementById('al-date').value || null,
+    status:     document.getElementById('al-status').value
+  };
+  try {
+    const res  = await fetch('/api/clinical/allergy', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showAlert('al-alert', `✓ Allergy saved — ID: ${data.allergy_id}`, true);
+  } catch(e) { showAlert('al-alert', `✗ ${e.message}`, false); }
+}
+
+// ── ADD TEST RESULT ───────────────────────────────────────────
+async function addTest() {
+  const body = {
+    encounter_id:    document.getElementById('t-encounter').value,
+    patient_id:      document.getElementById('t-patient').value,
+    test_name:       document.getElementById('t-name').value.trim(),
+    test_date:       document.getElementById('t-date').value || null,
+    result_value:    document.getElementById('t-value').value.trim() || null,
+    unit:            document.getElementById('t-unit').value.trim() || null,
+    reference_range: document.getElementById('t-ref').value.trim() || null,
+    status:          document.getElementById('t-status').value,
+    ordered_by:      document.getElementById('t-by').value.trim() || null,
+    notes:           document.getElementById('t-notes').value.trim() || null
+  };
+  try {
+    const res  = await fetch('/api/clinical/test-result', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showAlert('t-alert', `✓ Test result saved — ID: ${data.test_id}`, true);
+  } catch(e) { showAlert('t-alert', `✗ ${e.message}`, false); }
+}
+
+document.addEventListener('DOMContentLoaded', loadPatients);
+</script>
+</body>
+</html>
