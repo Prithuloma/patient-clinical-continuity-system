@@ -40,6 +40,7 @@ const statusBadge = s => {
   return `<span class="badge badge-${map[s]||'neutral'}">${s||''}</span>`;
 };
 const fmtDate = d => d ? d.slice(0,10) : '—';
+let currentHistoryData = null;
 
 // ── LOAD PATIENTS ─────────────────────────────────────────────
 async function loadPatients() {
@@ -72,8 +73,10 @@ async function loadHistory() {
     const res  = await fetch(`/api/history/${pid}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
+    currentHistoryData = data;
     con.innerHTML = renderHistory(data);
   } catch(e) {
+    currentHistoryData = null;
     con.innerHTML = `<div class="empty">Error: ${e.message}</div>`;
   }
 }
@@ -180,6 +183,23 @@ function renderHistory({ patient, encounters, diagnoses, medications, allergies,
       </tr>`).join('') + '</tbody></table></div>';
   } else html += '<div class="empty">No test results on record</div>';
 
+  // ── AI RECOMMENDATIONS ───────────────────────────────────────
+  html += sectionHeader('🤖', 'AI Recommendations', 2);
+  html += `
+    <div class="card ai-recommendation-card">
+      <button class="btn btn-primary" type="button" onclick="generateRecommendations()">Generate Recommendations</button>
+      <div class="ai-grid">
+        <div class="ai-box ai-box-recommended">
+          <h3>Recommended Medications</h3>
+          <div id="recommended-list" class="ai-list empty">Click "Generate Recommendations" to see suggestions.</div>
+        </div>
+        <div class="ai-box ai-box-avoid">
+          <h3>Medications to Avoid</h3>
+          <div id="avoid-list" class="ai-list empty">Click "Generate Recommendations" to see safety warnings.</div>
+        </div>
+      </div>
+    </div>`;
+
   return html;
 }
 
@@ -189,6 +209,75 @@ function sectionHeader(icon, title, count) {
     <span class="section-title">${title}</span>
     <span class="section-count">${count} record${count!==1?'s':''}</span>
   </div>`;
+}
+
+function generateRecommendations() {
+  if (!currentHistoryData) return;
+
+  console.log(currentHistoryData);
+  const diagnoses = (currentHistoryData.diagnoses || []).map(d => (d.diagnosis || d.diagnosis_name || '').toLowerCase());
+  const allergies = (currentHistoryData.allergies || []).map(a => (a.allergen || '').toLowerCase());
+  const recommended = [];
+  const avoid = [];
+
+  diagnoses.forEach(d => {
+    if (d.includes('fever')) {
+      recommended.push({ name: 'Paracetamol', reason: 'Used for fever' });
+    }
+    if (d.includes('cold') || d.includes('flu')) {
+      recommended.push({ name: 'Paracetamol', reason: 'Used for cold/flu symptoms' });
+    }
+    if (d.includes('infection')) {
+      recommended.push({ name: 'Azithromycin', reason: 'Used for infections' });
+    }
+    if (d.includes('cough')) {
+      recommended.push({ name: 'Cough Syrup', reason: 'Used for cough relief' });
+    }
+    if (d.includes('shortness of breath')) {
+      recommended.push({ name: 'Salbutamol', reason: 'Relieves breathing difficulty' });
+    }
+    if (d.includes('pain')) {
+      recommended.push({ name: 'Ibuprofen', reason: 'Used for pain relief' });
+    }
+  });
+
+  allergies.forEach(a => {
+    if (a.includes('penicillin')) {
+      avoid.push({ name: 'Penicillin', reason: 'Patient allergic' });
+    }
+    if (a.includes('aspirin')) {
+      avoid.push({ name: 'Aspirin', reason: 'Patient allergic' });
+    }
+  });
+
+  if (recommended.length === 0) {
+    recommended.push({
+      name: 'General Recommendation',
+      reason: 'No specific condition detected. General recommendation: consult physician and consider basic symptomatic treatment.'
+    });
+  }
+
+  renderRecommendationList('recommended-list', recommended, 'No rule-based recommendations from current diagnoses.');
+  renderRecommendationList('avoid-list', avoid, 'No avoid warnings from current allergies.');
+}
+
+function renderRecommendationList(containerId, items, emptyMessage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!items.length) {
+    container.classList.add('empty');
+    container.textContent = emptyMessage;
+    return;
+  }
+
+  container.classList.remove('empty');
+  container.innerHTML = items.map(item => `
+    <div class="ai-item">
+      <div class="ai-item-name">${item.name}</div>
+      <div class="ai-item-reason">${item.reason}</div>
+    </div>
+  `).join('');
 }
 
 document.addEventListener('DOMContentLoaded', loadPatients);

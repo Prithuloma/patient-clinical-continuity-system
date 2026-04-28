@@ -324,6 +324,54 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .encounter-body { padding: .85rem 1rem; background: var(--surface); }
 
+/* ── AI RECOMMENDATIONS ─────────────────────────────────────── */
+.ai-recommendation-card .btn { margin-bottom: 1rem; }
+.ai-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.ai-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem;
+  background: var(--surface);
+}
+.ai-box h3 {
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: .8rem;
+}
+.ai-box-recommended {
+  border-color: #9cd0b2;
+  background: #eef8f2;
+}
+.ai-box-recommended h3 { color: var(--success); }
+.ai-box-avoid {
+  border-color: #e8b0b8;
+  background: #fff1f3;
+}
+.ai-box-avoid h3 { color: var(--danger); }
+.ai-list { display: flex; flex-direction: column; gap: .6rem; }
+.ai-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: .6rem .7rem;
+}
+.ai-item-name {
+  font-family: 'DM Mono', monospace;
+  font-size: .8rem;
+  font-weight: 700;
+}
+.ai-item-reason {
+  font-size: .77rem;
+  color: var(--ink-muted);
+  margin-top: .2rem;
+}
+
 /* ── EMPTY STATE ─────────────────────────────────────────────── */
 .empty {
   text-align: center;
@@ -336,5 +384,6 @@ textarea { resize: vertical; min-height: 72px; }
 /* ── RESPONSIVE ─────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .ai-grid { grid-template-columns: 1fr; }
   nav .brand { font-size: 1rem; }
 }
