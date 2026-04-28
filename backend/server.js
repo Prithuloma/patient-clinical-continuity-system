@@ -12,9 +12,9 @@ app.use('/api/encounters', require('./encounters'));
 app.use('/api/clinical',   require('./clinical'));
 app.use('/api/history',    require('./history'));
 
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, '../frontend')));
 
-app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/', (_, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`CDCS running → http://localhost:${PORT}`));
